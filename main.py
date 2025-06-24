@@ -16,7 +16,7 @@ def send_alert(chat_id, text):
 if __name__ == '__main__':
     print("Bot is running...")
     bot.polling()
-def send_test_alert():
+def send_test_alert(1851186133):
     message = """🚨 *New Solana Token Alert* 🚨
 
 *Name:* MaskWifCat  
@@ -31,3 +31,23 @@ def send_test_alert():
     bot.send_message(chat_id=1851186133, text=message, parse_mode="Markdown", disable_web_page_preview=False)
 
 send_test_alert()
+
+if __name__ == '__main__':
+    print("Bot is running...")
+
+    def send_test_alert():
+        message = """*New Solana Token Alert* 🧠
+
+*Name:* MaskWifCat  
+*Symbol:* $MWC  
+*Liquidity:* $1,250  
+*Market Cap:* $84,000  
+*Dev Wallet Score:* Legit ✅  
+
+[View Chart](https://dexscreener.com/solana/0x1234567890abcdef)  
+[Token Address](https://solscan.io/token/0x1234567890abcdef)"""
+        bot.send_message(chat_id=1851186133, text=message, parse_mode="Markdown", disable_web_page_preview=True)
+
+    send_test_alert(1851186133)  # <--- Call before bot starts polling
+    bot.polling()
+
