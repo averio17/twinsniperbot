@@ -16,7 +16,7 @@ def send_alert(message):
 def fetch_new_tokens():
     try:
         response = requests.get("https://api.pump.fun/v1/tokens/recent")
-        return response.json()
+        return response.json().get("tokens", [])
     except Exception as e:
         print("Error fetching tokens:", e)
         return []
@@ -52,16 +52,7 @@ def format_alert(token):
 """
     return msg
 
-def main_loop():
-    seen = set()
-    while True:
-        tokens = fetch_new_tokens()
-        for token in tokens:
-            if token["address"] not in seen and is_legit_token(token):
-                msg = format_alert(token)
-                send_alert(msg)
-                seen.add(token["address"])
-        time.sleep(30)
+
 
 if __name__ == "__main__":
     send_alert("Twinsniperbot real-time tracking started! 📡")
