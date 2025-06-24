@@ -34,3 +34,4 @@ if __name__ == "__main__":
     send_test_alert()  # Call this once to test alert
     print("Bot is running...")
     bot.polling()
+import twinsniperbot_realtime_tracker
