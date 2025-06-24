@@ -53,10 +53,6 @@ def format_alert(token):
     return msg
 
 
-
-if __name__ == "__main__":
-    send_alert("Twinsniperbot real-time tracking started! 📡")
-    main_loop()
 def main():
     seen_tokens = set()
     while True:
