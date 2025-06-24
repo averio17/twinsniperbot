@@ -26,11 +26,9 @@ def is_legit_token(token):
         liquidity = token.get("liquidity", 0)
         market_cap = token.get("market_cap", 0)
         dev_score = token.get("dev_wallet_score", "Unknown")
-
-        # New relaxed filters
         return (
             liquidity >= 500 and
-            market_cap >= 50000 and
+            10000 <= market_cap <= 100000 and
             dev_score != "Scam"
         )
     except:
