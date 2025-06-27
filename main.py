@@ -1,9 +1,9 @@
 import os
 import json
-import threading
 from dotenv import load_dotenv
 from telebot import TeleBot
 import websocket
+import threading
 
 load_dotenv()
 
@@ -48,4 +48,5 @@ def run_websocket():
 if __name__ == "__main__":
     threading.Thread(target=run_websocket, daemon=True).start()
     print("Bot is running and listening for new token launches...")
-    bot.polling()
+    while True:
+        pass
