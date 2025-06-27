@@ -113,33 +113,41 @@ def main():
     scanned_since_last_ping = 0
 
     while True:
-        print("👀 Scanning for new tokens...")
+    print("🛰 Scanning for new tokens...")
 
-        pump_tokens = fetch_new_tokens()
-        birdeye_tokens = fetch_birdeye_tokens()
-        tokens = pump_tokens + birdeye_tokens
+    pump_tokens = fetch_new_tokens()
+    birdeye_tokens = fetch_birdeye_tokens()
+    tokens = pump_tokens + birdeye_tokens
 
-        scanned_since_last_ping += len(tokens)
+    print(f"📦 Fetched {len(tokens)} tokens total")
 
-        for token in tokens:
-            name = token.get("name", "Unknown")
-            symbol = token.get("symbol", "???")
-            token_address = token.get("address") or f"{name}-{symbol}"
-            print(f"🔍 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
+    legit_hits = 0
+    scanned_this_round = 0
 
-            if token_address not in seen_tokens and is_legit_token(token):
-                seen_tokens.add(token_address)
-                alert_message = format_alert(token)
-                send_alert(alert_message)
+    for token in tokens:
+        name = token.get("name", "Unknown")
+        symbol = token.get("symbol", "???")
+        address = token.get("address", "")
+        print(f"👀 Checking: {name} | Symbol: {symbol} | ID: {address}")
 
-        # 💓 Send heartbeat if no legit tokens
-        if time.time() - last_ping_time >= ping_interval:
-            status_msg = f"📡 Sniper status: Scanned {scanned_since_last_ping} tokens — no legit hits yet"
+        if address not in seen_tokens and is_legit_token(token):
+            scanned_this_round += 1
+            legit_hits += 1
+            seen_tokens.add(address)
+            alert_message = format_alert(token)
+            send_alert(alert_message)
+
+    # 💓 Heartbeat if no legit tokens
+    if time.time() - last_ping_time >= ping_interval:
+        if legit_hits == 0:
+            status_msg = f"🛰 Sniper status: Scanned {len(tokens)} tokens — no legit hits yet"
+            print(status_msg)
             send_alert(status_msg)
-            last_ping_time = time.time()
-            scanned_since_last_ping = 0
 
-        time.sleep(15)  # wait before next scan
+        last_ping_time = time.time()
+        scanned_since_last_ping = 0
+
+    time.sleep(15)  # wait before next scan
 
 
 
