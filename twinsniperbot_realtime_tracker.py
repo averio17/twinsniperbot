@@ -60,15 +60,22 @@ def format_alert(token):
 
 def main():
     seen_tokens = set()
+
     while True:
-        print("🔍 Scanning for new tokens...")
+        print("🔄 Scanning for new tokens...")
         tokens = fetch_new_tokens()
+
         for token in tokens:
-            token_address = token.get("address")
+            name = token.get("name", "Unknown")
+            symbol = token.get("symbol", "???")
+            token_address = token.get("address") or f"{name}-{symbol}"
+            print(f"👀 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
+
             if token_address not in seen_tokens and is_legit_token(token):
                 seen_tokens.add(token_address)
                 alert_message = format_alert(token)
                 send_alert(alert_message)
+
         time.sleep(15)  # check every 15 seconds
 
 if __name__ == "__main__":
