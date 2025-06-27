@@ -1,9 +1,9 @@
-import os
 import json
-from dotenv import load_dotenv
-from telebot import TeleBot
-import websocket
+import os
 import threading
+from dotenv import load_dotenv
+import websocket
+from telebot import TeleBot
 
 load_dotenv()
 
@@ -17,13 +17,13 @@ def on_open(ws):
     ws.send(json.dumps({"method": "subscribeNewToken"}))
 
 def on_message(ws, message):
-    print("New token payload:", message)
+    print("🐛 Raw payload:", message)
     data = json.loads(message)
     token_info = data.get("data", {})
     token_name = token_info.get("tokenName", "Unknown")
     token_address = token_info.get("mintAddress", "")
-    liquidity = token_info.get("liquidity", 0)
-
+    liquidity = token_info.get("liquidity", "Not provided in payload")
+    
     msg = f"👀 New Token Launched!\nName: {token_name}\nAddress: {token_address}\nLiquidity: {liquidity}"
     print(msg)
     if CHAT_ID:
