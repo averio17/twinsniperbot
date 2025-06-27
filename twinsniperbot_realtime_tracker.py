@@ -56,30 +56,20 @@ def is_legit_token(token):
     try:
         liquidity = token.get("liquidity", 0)
         market_cap = token.get("market_cap", 0)
-        dev_score = token.get("dev_wallet_score", "Unknown")
-
-        # 🔒 Dev wallet filter
-        if isinstance(dev_score, str):
-            if dev_score.lower() in ["scam", "suspicious"]:
-                return False
-            # allow "unknown"
-        elif isinstance(dev_score, (int, float)):
-            if dev_score < 40:
-                return False
 
         # 💧 Liquidity threshold
         if liquidity < 200:
             return False
 
-        # 💸 Market cap minimum
+        # 📈 Market cap minimum
         if market_cap < 2000:
             return False
 
         return True
-
     except Exception as e:
         print("❌ Error in legit check:", e)
         return False
+
 
 
 
