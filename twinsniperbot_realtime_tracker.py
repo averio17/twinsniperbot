@@ -77,10 +77,35 @@ def format_alert(token):
 
 def main():
     seen_tokens = set()
+    last_ping_time = time.time()
+    ping_interval = 1800  # every 30 mins (in seconds)
+    scanned_since_last_ping = 0
 
     while True:
         print("🔄 Scanning for new tokens...")
         tokens = fetch_new_tokens()
+        scanned_since_last_ping += len(tokens)
+
+        for token in tokens:
+            name = token.get("name", "Unknown")
+            symbol = token.get("symbol", "???")
+            token_address = token.get("address") or f"{name}-{symbol}"
+            print(f"👀 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
+
+            if token_address not in seen_tokens and is_legit_token(token):
+                seen_tokens.add(token_address)
+                alert_message = format_alert(token)
+                send_alert(alert_message)
+
+        # 🔁 Send heartbeat if no legit tokens
+        if time.time() - last_ping_time >= ping_interval:
+            status_msg = f"🧠 Sniper status: Scanned {scanned_since_last_ping} tokens — no legit hits yet."
+            send_alert(status_msg)
+            last_ping_time = time.time()
+            scanned_since_last_ping = 0
+
+        time.sleep(15)  # wait before next scan
+
 
         for token in tokens:
             name = token.get("name", "Unknown")
