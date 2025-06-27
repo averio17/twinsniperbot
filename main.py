@@ -33,6 +33,6 @@ def send_test_alert():
 if __name__ == '__main__':
     # send_test_alert()  # Disable test alert
     print("Bot is running...")
-    bot.polling()
     import twinsniperbot_realtime_tracker
     twinsniperbot_realtime_tracker.main()
+    bot.polling()
