@@ -61,7 +61,7 @@ def format_alert(token):
 def main():
     seen_tokens = set()
     while True:
-    print("🔍 Scanning for new tokens...")
+        print("🔍 Scanning for new tokens...")
         tokens = fetch_new_tokens()
         for token in tokens:
             token_address = token.get("address")
