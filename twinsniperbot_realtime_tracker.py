@@ -16,7 +16,9 @@ def send_alert(message):
 def fetch_new_tokens():
     try:
         response = requests.get("https://api.pump.fun/v1/tokens/recent")
-        return response.json().get("tokens", [])
+        tokens = response.json().get("tokens", [])
+        print(f"Fetched from pump.fun: {tokens}")  # 🔥 Log raw tokens
+        return tokens
     except Exception as e:
         print("Error fetching tokens:", e)
         return []
@@ -25,12 +27,13 @@ def fetch_birdeye_tokens():
     try:
         url = "https://public-api.birdeye.so/public/tokenlist?sort=createdAt"
         headers = {"accept": "application/json"}
-
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
+            print(f"Birdeye fetch failed with status: {response.status_code}")
             return []
 
         raw_tokens = response.json().get("data", [])
+        print(f"Fetched from Birdeye: {raw_tokens}")  # 🔥 Log raw tokens
         tokens = []
 
         for item in raw_tokens[:100]:
@@ -41,15 +44,15 @@ def fetch_birdeye_tokens():
                 "liquidity": item.get("liquidity", 0),
                 "market_cap": item.get("market_cap", 0),
                 "dexscreener": item.get("url", "#"),
-                "dev_wallet_score": "Unknown",  # fallback
+                "dev_wallet_score": "Unknown",
                 "source": "birdeye"
             }
             tokens.append(token)
-
         return tokens
     except Exception as e:
-        print("❌ Error fetching Birdeye tokens:", e)
+        print("Error fetching Birdeye tokens:", e)
         return []
+
 
 
 def is_legit_token(token):
