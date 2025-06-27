@@ -31,7 +31,7 @@ def send_test_alert():
     bot.send_message(chat_id=1851186133, text=message, parse_mode="Markdown", disable_web_page_preview=True)
 
 if __name__ == "__main__":
-    send_test_alert()  # Call this once to test alert
+    # send_test_alert()  # Disable test alert
     print("Bot is running...")
     bot.polling()
 import twinsniperbot_realtime_tracker
