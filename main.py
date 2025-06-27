@@ -10,7 +10,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-bot = telebot.TeleBot(BOT_TOKEN, threaded=False)  # disable internal threading to avoid conflict
+bot = telebot.TeleBot(BOT_TOKEN)
 
 def on_open(ws):
     print("WebSocket connection opened")
@@ -48,4 +48,5 @@ def run_websocket():
 if __name__ == "__main__":
     threading.Thread(target=run_websocket, daemon=True).start()
     print("Bot is running and listening for new token launches...")
-    bot.infinity_polling()
+    while True:
+        pass  # keep main thread alive, remove bot.polling() to avoid conflict
