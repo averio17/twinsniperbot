@@ -21,6 +21,37 @@ def fetch_new_tokens():
         print("Error fetching tokens:", e)
         return []
 
+def fetch_birdeye_tokens():
+    try:
+        url = "https://public-api.birdeye.so/public/tokenlist?sort=createdAt"
+        headers = {"accept": "application/json"}
+
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+
+        raw_tokens = response.json().get("data", [])
+        tokens = []
+
+        for item in raw_tokens[:100]:
+            token = {
+                "name": item.get("name", "Unknown"),
+                "symbol": item.get("symbol", ""),
+                "address": item.get("address", ""),
+                "liquidity": item.get("liquidity", 0),
+                "market_cap": item.get("market_cap", 0),
+                "dexscreener": item.get("url", "#"),
+                "dev_wallet_score": "Unknown",  # fallback
+                "source": "birdeye"
+            }
+            tokens.append(token)
+
+        return tokens
+    except Exception as e:
+        print("❌ Error fetching Birdeye tokens:", e)
+        return []
+
+
 def is_legit_token(token):
     try:
         liquidity = token.get("liquidity", 0)
@@ -78,28 +109,32 @@ def format_alert(token):
 def main():
     seen_tokens = set()
     last_ping_time = time.time()
-    ping_interval = 1800  # every 30 mins (in seconds)
+    ping_interval = 1800  # every 30 mins
     scanned_since_last_ping = 0
 
     while True:
-        print("🔄 Scanning for new tokens...")
-        tokens = fetch_new_tokens()
+        print("👀 Scanning for new tokens...")
+
+        pump_tokens = fetch_new_tokens()
+        birdeye_tokens = fetch_birdeye_tokens()
+        tokens = pump_tokens + birdeye_tokens
+
         scanned_since_last_ping += len(tokens)
 
         for token in tokens:
             name = token.get("name", "Unknown")
             symbol = token.get("symbol", "???")
             token_address = token.get("address") or f"{name}-{symbol}"
-            print(f"👀 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
+            print(f"🔍 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
 
             if token_address not in seen_tokens and is_legit_token(token):
                 seen_tokens.add(token_address)
                 alert_message = format_alert(token)
                 send_alert(alert_message)
 
-        # 🔁 Send heartbeat if no legit tokens
+        # 💓 Send heartbeat if no legit tokens
         if time.time() - last_ping_time >= ping_interval:
-            status_msg = f"🧠 Sniper status: Scanned {scanned_since_last_ping} tokens — no legit hits yet."
+            status_msg = f"📡 Sniper status: Scanned {scanned_since_last_ping} tokens — no legit hits yet"
             send_alert(status_msg)
             last_ping_time = time.time()
             scanned_since_last_ping = 0
@@ -107,16 +142,7 @@ def main():
         time.sleep(15)  # wait before next scan
 
 
-        for token in tokens:
-            name = token.get("name", "Unknown")
-            symbol = token.get("symbol", "???")
-            token_address = token.get("address") or f"{name}-{symbol}"
-            print(f"👀 Checking: {name} | Symbol: {symbol} | ID: {token_address}")
 
-            if token_address not in seen_tokens and is_legit_token(token):
-                seen_tokens.add(token_address)
-                alert_message = format_alert(token)
-                send_alert(alert_message)
 
         time.sleep(15)  # check every 15 seconds
 
