@@ -1,38 +1,51 @@
 import os
-from dotenv import load_dotenv
 import telebot
-import requests
+import websocket
+import threading
+import json
+from dotenv import load_dotenv
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, "Twinsniperbot is live! 🐐🚀")
+def on_open(ws):
+    print("WebSocket connection opened")
+    ws.send(json.dumps({"method": "subscribeNewToken"}))
 
-def send_alert(chat_id, text):
-    bot.send_message(chat_id, text, parse_mode="Markdown", disable_web_page_preview=True)
+def on_message(ws, message):
+    print("New token payload:", message)
+    data = json.loads(message)
+    token_info = data.get("data", {})
+    token_name = token_info.get("tokenName", "Unknown")
+    token_address = token_info.get("mintAddress", "")
+    liquidity = token_info.get("liquidity", 0)
 
-# Test alert function
-def send_test_alert():
-    message = """*New Solana Token Alert* ⚠️
+    msg = f"👀 New Token Launched!\nName: {token_name}\nAddress: {token_address}\nLiquidity: {liquidity}"
+    print(msg)
+    if CHAT_ID:
+        bot.send_message(CHAT_ID, msg)
 
-*Name:* MaskWifCat
-*Symbol:* $MWC
-*Liquidity:* $1,250
-*Market Cap:* $84,000
-*Dev Wallet Score:* Legit ✅
+def on_error(ws, error):
+    print("WebSocket error:", error)
 
-[View Chart](https://dexscreener.com/solana/0x1234567890abcdef)
-[Token Address](https://solscan.io/token/0x1234567890abcdef)
-"""
-    bot.send_message(chat_id=1851186133, text=message, parse_mode="Markdown", disable_web_page_preview=True)
+def on_close(ws, close_status_code, close_msg):
+    print("WebSocket connection closed")
 
-if __name__ == '__main__':
-    # send_test_alert()  # Disable test alert
-    print("Bot is running...")
-    import twinsniperbot_realtime_tracker
-    twinsniperbot_realtime_tracker.main()
+def run_websocket():
+    ws = websocket.WebSocketApp(
+        "wss://pumpportal.fun/api/data",
+        on_open=on_open,
+        on_message=on_message,
+        on_error=on_error,
+        on_close=on_close
+    )
+    ws.run_forever()
+
+if __name__ == "__main__":
+    threading.Thread(target=run_websocket).start()
+    print("Bot is running and listening for new token launches...")
     bot.polling()
