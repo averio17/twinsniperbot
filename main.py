@@ -12,8 +12,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-# Store recent tokens with timestamp to prevent repeat alerts
-recent_tokens = {}
+recent_tokens = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -26,32 +25,32 @@ async def pumpfun_listener():
         print("Subscribed to migration events")
 
         async for message in ws:
-            print("Received message")
             try:
                 data = json.loads(message)
                 print("Data:", json.dumps(data, indent=2))
+
+                tx_type = data.get('txType', '')
+                if tx_type != 'create':
+                    continue
 
                 token_name = data.get('name', 'Unknown')
                 token_address = data.get('mint', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
 
-                now = time.time()
+                token_id = f"{token_address}_{tx_type}"
 
-                # Skip duplicates seen in last 60 seconds
-                if token_address in recent_tokens and now - recent_tokens[token_address] < 60:
+                if token_id in recent_tokens:
                     continue
-
-                recent_tokens[token_address] = now
+                recent_tokens.add(token_id)
 
                 msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
 
-                # Clean old entries
-                for k in list(recent_tokens.keys()):
-                    if now - recent_tokens[k] > 300:
-                        del recent_tokens[k]
+                # Clean up old entries
+                if len(recent_tokens) > 1000:
+                    recent_tokens.clear()
 
                 await asyncio.sleep(1)
             except Exception as e:
