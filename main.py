@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import time
 from dotenv import load_dotenv
 from telebot import TeleBot
 import websockets
@@ -12,7 +11,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-alerted_mints = set()
+alerted_bonded = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -20,57 +19,40 @@ async def pumpfun_listener():
     async with websockets.connect(uri) as ws:
         print("Connected!")
         await ws.send(json.dumps({"method": "subscribeNewToken"}))
-        print("Subscribed to new token events")
         await ws.send(json.dumps({"method": "subscribeMigration"}))
-        print("Subscribed to migration events")
+        print("Subscribed to token creation and migration events")
 
-        last_heartbeat = time.time()
-
-        while True:
+        async for message in ws:
             try:
-                message = await asyncio.wait_for(ws.recv(), timeout=30)
                 data = json.loads(message)
-                print("Received message")
+                event_type = data.get('method', '')
 
-                if data.get('txType') != 'create':
+                if event_type != 'subscribeMigration':
                     continue
 
                 token_address = data.get('mint', '').strip().lower()
-                if not token_address or token_address in alerted_mints:
+                if not token_address or token_address in alerted_bonded:
                     continue
 
-                liquidity_usd = data.get('liquidityUsd', 0)
-                market_cap_usd = data.get('marketCapUsd', 0)
-                volume_usd = data.get('volume24hUsd', 0)
-
-                if liquidity_usd < 10000 or market_cap_usd < 10000 or volume_usd < 10000:
+                migration_type = data.get('migrationType', '').lower()
+                if migration_type != 'bonding':
                     continue
 
-                alerted_mints.add(token_address)
+                alerted_bonded.add(token_address)
                 token_name = data.get('name', 'Unknown')
-
                 dexscreener_link = f"https://dexscreener.com/solana/{token_address}"
-                image_url = data.get('image', '')
 
-                caption = (
-                    f"🔥 New token launched!\n"
+                msg = (
+                    f"🔥 New token just bonded on pump.fun!\n"
                     f"Name: {token_name}\n"
                     f"Address: {token_address}\n"
-                    f"Liquidity (USD): {liquidity_usd}\n"
-                    f"Market Cap (USD): {market_cap_usd}\n"
-                    f"24h Volume (USD): {volume_usd}\n"
                     f"[View on Dexscreener]({dexscreener_link})"
                 )
 
-                if image_url:
-                    bot.send_photo(CHAT_ID, image_url, caption=caption, parse_mode="Markdown")
-                else:
-                    bot.send_message(CHAT_ID, caption, parse_mode="Markdown")
+                if CHAT_ID:
+                    bot.send_message(CHAT_ID, msg, parse_mode="Markdown")
+                    print("Sent bonded alert to Telegram")
 
-                print("Sent message to Telegram")
-
-            except asyncio.TimeoutError:
-                print("Heartbeat... waiting for data")
             except Exception as e:
                 print("Error parsing message:", e)
 
