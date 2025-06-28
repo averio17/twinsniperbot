@@ -14,15 +14,15 @@ bot = TeleBot(BOT_TOKEN)
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
     async with websockets.connect(uri) as ws:
-        # Subscribe to new token events
         await ws.send(json.dumps({"method": "subscribeNewToken"}))
-        # Subscribe to migration events
         await ws.send(json.dumps({"method": "subscribeMigration"}))
 
         async for message in ws:
-            print("Raw payload:", message)
             try:
                 data = json.loads(message)
+                print(json.dumps(data, indent=2))  # Print the full payload
+
+                # Test extracting fields
                 token_info = data.get('data', {})
                 token_name = token_info.get('tokenName', 'Unknown')
                 token_address = token_info.get('mintAddress', 'Unknown')
