@@ -11,7 +11,8 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-seen_mints = set()
+# Set to store tokens already alerted
+alerted_tokens = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -30,10 +31,10 @@ async def pumpfun_listener():
                 if not token_address:
                     continue
 
-                if token_address in seen_mints:
-                    print("Already alerted this token, skipping...")
+                # Only alert once per unique token
+                if token_address in alerted_tokens:
                     continue
-                seen_mints.add(token_address)
+                alerted_tokens.add(token_address)
 
                 token_name = data.get('name', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
@@ -42,9 +43,6 @@ async def pumpfun_listener():
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
-
-                if len(seen_mints) > 10000:
-                    seen_mints.clear()
 
                 await asyncio.sleep(1)
             except Exception as e:
