@@ -10,45 +10,42 @@ bot = TeleBot(BOT_TOKEN)
 
 alerted_bonded = set()
 
-async def pumpfun_listener():
-    while True:
-        try:
-            uri = "wss://pumpportal.fun/api/data"
-            print("Connecting to websocket...")
-            async with websockets.connect(uri) as ws:
-                print("Connected!")
-                await ws.send(json.dumps({"method": "subscribeMigration"}))
-                print("Subscribed to migration events.")
+import asyncio
+import websockets
+import json
 
-                async for message in ws:
-                    data = json.loads(message)
-                    print("DEBUG FULL MESSAGE:", json.dumps(data, indent=2))
+async def subscribe():
+  uri = "wss://pumpportal.fun/api/data"
+  async with websockets.connect(uri) as websocket:
+      
+      # Subscribing to token creation events
+      payload = {
+          "method": "subscribeNewToken",
+      }
+      await websocket.send(json.dumps(payload))
 
-                    token_address = data.get("mint", "").strip().lower()
-                    if not token_address or token_address in alerted_bonded:
-                        continue
+      # Subscribing to migration events
+      payload = {
+          "method": "subscribeMigration",
+      }
+      await websocket.send(json.dumps(payload))
 
-                    migration_type = data.get("migrationType", "").lower()
-                    if migration_type != "bonding":
-                        continue
+      # Subscribing to trades made by accounts
+      payload = {
+          "method": "subscribeAccountTrade",
+          "keys": ["AArPXm8JatJiuyEffuC1un2Sc835SULa4uQqDcaGpAjV"]  # array of accounts to watch
+      }
+      await websocket.send(json.dumps(payload))
 
-                    alerted_bonded.add(token_address)
-                    token_name = data.get("name", "Unknown")
-                    dexscreener_link = f"https://dexscreener.com/solana/{token_address}"
+      # Subscribing to trades on tokens
+      payload = {
+          "method": "subscribeTokenTrade",
+          "keys": ["91WNez8D22NwBssQbkzjy4s2ipFrzpmn5hfvWVe2aY5p"]  # array of token CAs to watch
+      }
+      await websocket.send(json.dumps(payload))
+      
+      async for message in websocket:
+          print(json.loads(message))
 
-                    msg = (
-                        f"🚀 *New Token Just Bonded on pump.fun!*\n\n"
-                        f"*Name:* {token_name}\n"
-                        f"*Address:* `{token_address}`\n"
-                        f"[View on Dexscreener]({dexscreener_link})"
-                    )
-
-                    bot.send_message(CHAT_ID, msg, parse_mode="Markdown")
-                    print("Sent bonded alert to Telegram!")
-
-        except Exception as e:
-            print("Error:", e)
-            await asyncio.sleep(5)
-
-if __name__ == "__main__":
-    asyncio.run(pumpfun_listener())
+# Run the subscribe function
+asyncio.get_event_loop().run_until_complete(subscribe())
