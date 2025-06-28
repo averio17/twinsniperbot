@@ -37,7 +37,6 @@ async def pumpfun_listener():
                 market_cap_usd = data.get('marketCapUsd', 0)
                 graduated = data.get('graduated', False)
 
-                # Only alert for tokens that have graduated and meet thresholds
                 if not graduated:
                     continue
 
@@ -47,16 +46,24 @@ async def pumpfun_listener():
                 alerted_mints.add(token_address)
                 token_name = data.get('name', 'Unknown')
 
-                msg = (
+                dexscreener_link = f"https://dexscreener.com/solana/{token_address}"
+                image_url = data.get('image', '')
+
+                caption = (
                     f"🔥 New token launched!\n"
                     f"Name: {token_name}\n"
                     f"Address: {token_address}\n"
                     f"Liquidity (USD): {liquidity_usd}\n"
-                    f"Market Cap (USD): {market_cap_usd}"
+                    f"Market Cap (USD): {market_cap_usd}\n"
+                    f"[View on Dexscreener]({dexscreener_link})"
                 )
-                if CHAT_ID:
-                    bot.send_message(CHAT_ID, msg)
-                    print("Sent message to Telegram")
+
+                if image_url:
+                    bot.send_photo(CHAT_ID, image_url, caption=caption, parse_mode="Markdown")
+                else:
+                    bot.send_message(CHAT_ID, caption, parse_mode="Markdown")
+
+                print("Sent message to Telegram")
 
             except Exception as e:
                 print("Error parsing message:", e)
