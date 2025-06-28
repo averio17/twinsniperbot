@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import time
 from dotenv import load_dotenv
 from telebot import TeleBot
 import websockets
@@ -12,7 +11,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-recent_tokens = set()
+seen_mints = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -29,28 +28,22 @@ async def pumpfun_listener():
                 data = json.loads(message)
                 print("Data:", json.dumps(data, indent=2))
 
-                tx_type = data.get('txType', '')
-                if tx_type != 'create':
-                    continue
-
                 token_name = data.get('name', 'Unknown')
                 token_address = data.get('mint', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
 
-                token_id = f"{token_address}_{tx_type}"
-
-                if token_id in recent_tokens:
+                if token_address in seen_mints:
                     continue
-                recent_tokens.add(token_id)
+                seen_mints.add(token_address)
 
                 msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
 
-                # Clean up old entries
-                if len(recent_tokens) > 1000:
-                    recent_tokens.clear()
+                # Optional: clear set if grows too big
+                if len(seen_mints) > 10000:
+                    seen_mints.clear()
 
                 await asyncio.sleep(1)
             except Exception as e:
