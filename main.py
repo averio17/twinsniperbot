@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 from dotenv import load_dotenv
 from telebot import TeleBot
 import websockets
@@ -23,33 +24,26 @@ async def pumpfun_listener():
         await ws.send(json.dumps({"method": "subscribeMigration"}))
         print("Subscribed to migration events")
 
-        async for message in ws:
+        last_heartbeat = time.time()
+
+        while True:
             try:
-                print("Received message")
+                message = await asyncio.wait_for(ws.recv(), timeout=30)
                 data = json.loads(message)
-                print(json.dumps(data, indent=2))
+                print("Received message")
 
                 if data.get('txType') != 'create':
-                    print("Not a create event, skipping...")
                     continue
 
                 token_address = data.get('mint', '').strip().lower()
-                if not token_address:
-                    print("No token address, skipping...")
-                    continue
-
-                if token_address in alerted_mints:
-                    print("Already alerted this token, skipping...")
+                if not token_address or token_address in alerted_mints:
                     continue
 
                 liquidity_usd = data.get('liquidityUsd', 0)
                 market_cap_usd = data.get('marketCapUsd', 0)
                 volume_usd = data.get('volume24hUsd', 0)
 
-                print(f"Liquidity: {liquidity_usd}, Market Cap: {market_cap_usd}, Volume: {volume_usd}")
-
                 if liquidity_usd < 10000 or market_cap_usd < 10000 or volume_usd < 10000:
-                    print("Doesn't meet thresholds, skipping...")
                     continue
 
                 alerted_mints.add(token_address)
@@ -75,6 +69,8 @@ async def pumpfun_listener():
 
                 print("Sent message to Telegram")
 
+            except asyncio.TimeoutError:
+                print("Heartbeat... waiting for data")
             except Exception as e:
                 print("Error parsing message:", e)
 
