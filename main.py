@@ -30,6 +30,9 @@ async def pumpfun_listener():
                 if event_type != 'subscribeMigration':
                     continue
 
+                print("DEBUG migration event:")
+                print(json.dumps(data, indent=2))
+
                 token_address = data.get('mint', '').strip().lower()
                 if not token_address or token_address in alerted_bonded:
                     continue
