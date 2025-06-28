@@ -22,13 +22,11 @@ async def pumpfun_listener():
                 data = json.loads(message)
                 print(json.dumps(data, indent=2))  # Print the full payload
 
-                # Test extracting fields
-                token_info = data.get('data', {})
-                token_name = token_info.get('tokenName', 'Unknown')
-                token_address = token_info.get('mintAddress', 'Unknown')
-                liquidity = token_info.get('liquidity', 'Not provided')
+                token_name = data.get('name', 'Unknown')
+                token_address = data.get('mint', 'Unknown')
+                liquidity = data.get('marketCapSol', 'Not provided')
 
-                msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nLiquidity: {liquidity}"
+                msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
             except Exception as e:
