@@ -30,17 +30,26 @@ async def pumpfun_listener():
                     continue
 
                 token_address = data.get('mint', '').strip().lower()
-                if not token_address:
+                if not token_address or token_address in alerted_mints:
                     continue
 
-                if token_address in alerted_mints:
+                liquidity_usd = data.get('liquidityUsd', 0)
+                market_cap_usd = data.get('marketCapUsd', 0)
+
+                # Filter out low liquidity / market cap
+                if liquidity_usd < 10000 or market_cap_usd < 10000:
                     continue
+
                 alerted_mints.add(token_address)
-
                 token_name = data.get('name', 'Unknown')
-                liquidity = data.get('marketCapSol', 'Not provided')
 
-                msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
+                msg = (
+                    f"🔥 New token launched!\n"
+                    f"Name: {token_name}\n"
+                    f"Address: {token_address}\n"
+                    f"Liquidity (USD): {liquidity_usd}\n"
+                    f"Market Cap (USD): {market_cap_usd}"
+                )
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
