@@ -35,8 +35,12 @@ async def pumpfun_listener():
 
                 liquidity_usd = data.get('liquidityUsd', 0)
                 market_cap_usd = data.get('marketCapUsd', 0)
+                graduated = data.get('graduated', False)
 
-                # Filter out low liquidity / market cap
+                # Only alert for tokens that have graduated and meet thresholds
+                if not graduated:
+                    continue
+
                 if liquidity_usd < 10000 or market_cap_usd < 10000:
                     continue
 
