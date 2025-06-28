@@ -26,13 +26,16 @@ async def pumpfun_listener():
         async for message in ws:
             try:
                 data = json.loads(message)
-                print("Data:", json.dumps(data, indent=2))
+                print("Full data:", json.dumps(data, indent=2))
 
                 token_name = data.get('name', 'Unknown')
                 token_address = data.get('mint', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
 
+                print(f"DEBUG: token_address = {token_address}")
+
                 if token_address in seen_mints:
+                    print("Duplicate detected, skipping...")
                     continue
                 seen_mints.add(token_address)
 
@@ -40,10 +43,6 @@ async def pumpfun_listener():
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
-
-                # Optional: clear set if grows too big
-                if len(seen_mints) > 10000:
-                    seen_mints.clear()
 
                 await asyncio.sleep(1)
             except Exception as e:
