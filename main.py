@@ -35,12 +35,9 @@ async def pumpfun_listener():
 
                 liquidity_usd = data.get('liquidityUsd', 0)
                 market_cap_usd = data.get('marketCapUsd', 0)
-                graduated = data.get('graduated', False)
+                volume_usd = data.get('volume24hUsd', 0)
 
-                if not graduated:
-                    continue
-
-                if liquidity_usd < 10000 or market_cap_usd < 10000:
+                if liquidity_usd < 10000 or market_cap_usd < 10000 or volume_usd < 10000:
                     continue
 
                 alerted_mints.add(token_address)
@@ -55,6 +52,7 @@ async def pumpfun_listener():
                     f"Address: {token_address}\n"
                     f"Liquidity (USD): {liquidity_usd}\n"
                     f"Market Cap (USD): {market_cap_usd}\n"
+                    f"24h Volume (USD): {volume_usd}\n"
                     f"[View on Dexscreener]({dexscreener_link})"
                 )
 
