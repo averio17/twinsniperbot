@@ -25,19 +25,31 @@ async def pumpfun_listener():
 
         async for message in ws:
             try:
+                print("Received message")
                 data = json.loads(message)
+                print(json.dumps(data, indent=2))
+
                 if data.get('txType') != 'create':
+                    print("Not a create event, skipping...")
                     continue
 
                 token_address = data.get('mint', '').strip().lower()
-                if not token_address or token_address in alerted_mints:
+                if not token_address:
+                    print("No token address, skipping...")
+                    continue
+
+                if token_address in alerted_mints:
+                    print("Already alerted this token, skipping...")
                     continue
 
                 liquidity_usd = data.get('liquidityUsd', 0)
                 market_cap_usd = data.get('marketCapUsd', 0)
                 volume_usd = data.get('volume24hUsd', 0)
 
+                print(f"Liquidity: {liquidity_usd}, Market Cap: {market_cap_usd}, Volume: {volume_usd}")
+
                 if liquidity_usd < 10000 or market_cap_usd < 10000 or volume_usd < 10000:
+                    print("Doesn't meet thresholds, skipping...")
                     continue
 
                 alerted_mints.add(token_address)
