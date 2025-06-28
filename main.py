@@ -11,8 +11,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-# Set to store tokens already alerted
-alerted_tokens = set()
+alerted_mints = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -27,14 +26,16 @@ async def pumpfun_listener():
         async for message in ws:
             try:
                 data = json.loads(message)
-                token_address = data.get('mint', '').strip()
+                if data.get('txType') != 'create':
+                    continue
+
+                token_address = data.get('mint', '').strip().lower()
                 if not token_address:
                     continue
 
-                # Only alert once per unique token
-                if token_address in alerted_tokens:
+                if token_address in alerted_mints:
                     continue
-                alerted_tokens.add(token_address)
+                alerted_mints.add(token_address)
 
                 token_name = data.get('name', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
@@ -44,7 +45,6 @@ async def pumpfun_listener():
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
 
-                await asyncio.sleep(1)
             except Exception as e:
                 print("Error parsing message:", e)
 
