@@ -11,7 +11,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-seen_mints = set()
+seen_signatures = set()
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -28,21 +28,26 @@ async def pumpfun_listener():
                 data = json.loads(message)
                 print("Full data:", json.dumps(data, indent=2))
 
+                signature = data.get('signature', '').strip()
+                if not signature:
+                    continue
+
+                if signature in seen_signatures:
+                    print("Duplicate signature, skipping...")
+                    continue
+                seen_signatures.add(signature)
+
                 token_name = data.get('name', 'Unknown')
                 token_address = data.get('mint', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
-
-                print(f"DEBUG: token_address = {token_address}")
-
-                if token_address in seen_mints:
-                    print("Duplicate detected, skipping...")
-                    continue
-                seen_mints.add(token_address)
 
                 msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
+
+                if len(seen_signatures) > 10000:
+                    seen_signatures.clear()
 
                 await asyncio.sleep(1)
             except Exception as e:
