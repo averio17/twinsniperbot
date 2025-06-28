@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 from dotenv import load_dotenv
 from telebot import TeleBot
 import websockets
@@ -11,7 +12,8 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 bot = TeleBot(BOT_TOKEN)
 
-seen_tokens = set()
+# Store recent tokens with timestamp to prevent repeat alerts
+recent_tokens = {}
 
 async def pumpfun_listener():
     uri = "wss://pumpportal.fun/api/data"
@@ -33,17 +35,23 @@ async def pumpfun_listener():
                 token_address = data.get('mint', 'Unknown')
                 liquidity = data.get('marketCapSol', 'Not provided')
 
-                if token_address in seen_tokens:
+                now = time.time()
+
+                # Skip duplicates seen in last 60 seconds
+                if token_address in recent_tokens and now - recent_tokens[token_address] < 60:
                     continue
-                seen_tokens.add(token_address)
+
+                recent_tokens[token_address] = now
 
                 msg = f"🔥 New token launched!\nName: {token_name}\nAddress: {token_address}\nMarket Cap (SOL): {liquidity}"
                 if CHAT_ID:
                     bot.send_message(CHAT_ID, msg)
                     print("Sent message to Telegram")
 
-                if len(seen_tokens) > 500:
-                    seen_tokens.clear()
+                # Clean old entries
+                for k in list(recent_tokens.keys()):
+                    if now - recent_tokens[k] > 300:
+                        del recent_tokens[k]
 
                 await asyncio.sleep(1)
             except Exception as e:
