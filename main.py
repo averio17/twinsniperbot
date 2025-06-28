@@ -41,17 +41,21 @@ async def pumpfun_listener():
                 alerted_bonded.add(token_address)
                 token_name = data.get('name', 'Unknown')
                 dexscreener_link = f"https://dexscreener.com/solana/{token_address}"
+                image_url = data.get('image', '')
 
-                msg = (
+                caption = (
                     f"🔥 New token just bonded on pump.fun!\n"
                     f"Name: {token_name}\n"
                     f"Address: {token_address}\n"
                     f"[View on Dexscreener]({dexscreener_link})"
                 )
 
-                if CHAT_ID:
-                    bot.send_message(CHAT_ID, msg, parse_mode="Markdown")
-                    print("Sent bonded alert to Telegram")
+                if image_url:
+                    bot.send_photo(CHAT_ID, image_url, caption=caption, parse_mode="Markdown")
+                else:
+                    bot.send_message(CHAT_ID, caption, parse_mode="Markdown")
+
+                print("Sent bonded alert to Telegram")
 
             except Exception as e:
                 print("Error parsing message:", e)
