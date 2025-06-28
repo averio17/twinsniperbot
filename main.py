@@ -48,4 +48,4 @@ async def subscribe():
           print(json.loads(message))
 
 # Run the subscribe function
-asyncio.get_event_loop().run_until_complete(subscribe())
+asyncio.run(subscribe())
