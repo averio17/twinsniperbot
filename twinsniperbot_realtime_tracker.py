@@ -76,7 +76,7 @@ def is_legit_token(token):
 
 
 
-def format_alert(token):
+def (msg = format_alert(token):
     name = token.get("name", "Unknown")
     symbol = token.get("symbol", "")
     liquidity = token.get("liquidity", 0)
